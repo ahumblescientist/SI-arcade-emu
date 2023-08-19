@@ -18,6 +18,7 @@ typedef enum {
 typedef struct {
 	uint8_t in;
 	uint8_t out;
+	uint8_t outRead;
 } Device;
 
 typedef struct {
@@ -33,11 +34,11 @@ typedef struct {
 	uint8_t I;
 	uint8_t I_opcode;
 	uint8_t hlt;
-	Device *devs; // you need to allocate as many devices as you need using initCpu, where each device index refers to its id
+	Device *devs;
 } I8080;
 
 
-void initCpu(uint8_t *, uint8_t);
+void initCpu(uint8_t *, Device *);
 
 // set
 void setBC(uint16_t);
@@ -49,9 +50,12 @@ uint16_t getBC();
 uint16_t getDE();
 uint16_t getHL();
 uint8_t getFlag(Flag);
-void setFlag(Flag, uint8_t);
-int debug(uint16_t);
+void setFlag(Flag, uint32_t);
+int debug();
 void cycle();
 void interrupt(uint8_t);
+
+size_t getCycles();
+void resetCycles();
 
 #endif

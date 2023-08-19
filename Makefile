@@ -1,9 +1,9 @@
-CFILES = main.c SI.c
-HFILES = Makefile SI.h
+CFILES = main.cpp CPU/i8080.cpp
+HFILES = Makefile SI.hpp CPU/i8080.hpp
 FILES = $(CFILES) $(HFILES)
-CC = clang
+CC = clang++
 OUT = bin/main
-FLAGS = -ggdb3 -O0 -o $(OUT)
+FLAGS = -lsfml-window -lsfml-system -lsfml-graphics -ggdb3 -O0 -o $(OUT)
 
 
 main: $(FILES)
