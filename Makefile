@@ -1,5 +1,5 @@
-CFILES = main.cpp CPU/i8080.cpp
-HFILES = Makefile SI.hpp CPU/i8080.hpp
+CFILES = src/main.cpp src/CPU/i8080.cpp
+HFILES = Makefile src/SI.hpp src/CPU/i8080.hpp
 FILES = $(CFILES) $(HFILES)
 CC = clang++
 OUT = bin/main

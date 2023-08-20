@@ -6,6 +6,11 @@
 #include "SI.hpp"
 #include "CPU/i8080.hpp"
 
+
+#define PREF_ASPECT_RATIO 7/8
+#define WINDOW_WIDTH 700
+#define WINDOW_HEIGHT 800
+
 size_t readFile(char *filename, uint8_t **data) {
 	FILE *fp = fopen(filename, "r");
 	if(fp == NULL) {
@@ -98,18 +103,16 @@ void input(sf::RenderWindow *window, SI *machine) {
 void updateScreen(sf::RenderWindow *window, SI *machine) {
 	sf::Image image;
 	image.create(224, 256, sf::Color::Black);
-	for(uint16_t v=0;v<224;v++) {
-		for(uint16_t h=0;h<256;h++) {
-			uint16_t base_offset = VRAM_START;
-			uint16_t vertical_offset = 0x20*v;
-			uint16_t horizontal_offset = h >> 3;
-			uint16_t current_byte = base_offset + vertical_offset + horizontal_offset;
-			uint8_t current_bit = h % 8;
-			bool thisPixel = machine->memory[current_byte] & (1 << current_bit);
-			image.setPixel(v, 256-h-1, thisPixel ? sf::Color::White : sf::Color::Black);
+	for(uint16_t v = 0;v<224;v++) {
+		for(uint16_t h = 0;h<256;h++) {
+			uint16_t v_index = v * 32; // every scanline has 32 bytes
+			uint16_t h_index = h / 8; // since each byte is 8 bits, we divide by 8 and automatically take the floor of the result 
+			uint8_t curByte = machine->memory[VRAM_START + v_index + h_index];
+			uint8_t b = h%8;	
+			sf::Color curPixel = (curByte & (1 << b)) ? sf::Color::White : sf::Color::Black;
+			image.setPixel(v, 256 - h - 1, curPixel);
 		}
 	}
-
 	window->clear();
 	sf::Texture texture;
 	texture.loadFromImage(image);
@@ -120,34 +123,35 @@ void updateScreen(sf::RenderWindow *window, SI *machine) {
 	sprite.setScale(
 			targetSize.x / sprite.getLocalBounds().width,
 			targetSize.y / sprite.getLocalBounds().height
-			);
+			); // making the sprite scale with any window size, its preffered to keep an aspect ratio of (224 (w)/ 256 (h)) = 7/8
 	window->draw(sprite);
 }
 
 void handleIO(SI *machine) {
 	if(machine->devs[4].outRead) {
 		machine->devs[4].outRead = 0;
-		machine->shift_reg >>= 8;
-		machine->shift_reg |= ((uint16_t)machine->devs[4].out << 8);
-		printf("P4: %u\n", machine->devs[4].out);
+		machine->shift_reg = machine->shift_reg >> 8;
+		machine->shift_reg |= ((uint16_t)(machine->devs[4].out) << 8);
 	}
 	if(machine->devs[2].outRead) {
 		machine->devs[2].outRead = 0;
-		machine->shift_offset = machine->devs[2].out & 0b111;
-		machine->devs[3].in = (machine->shift_reg >> (8 - machine->shift_offset)) & 0xFF;
-		printf("P2: %u\n", machine->devs[2].out);
+		machine->shift_offset = machine->devs[2].out & 7;
 	}
+	machine->devs[3].in = (machine->shift_reg >> (8 - machine->shift_offset)) & 0xFF;
 }
+
+#define INS_COUNT 1000
 
 void mainloop(sf::RenderWindow *window, SI *machine) {
 	sf::Clock clock;
 	sf::Time time = sf::Time::Zero;
-	while(window->isOpen()) {
+	long long int insCount = 0;
+	while(window->isOpen() && insCount <= INS_COUNT) {
 		time += clock.restart();
 		size_t count = 0;
 		input(window, machine);
-		if(time.asMilliseconds() > 16.6666f) { // almost 60 FPS
-			while(1) {
+		if(time.asMilliseconds() > 16.6667f) { // almost 60 FPS
+			while(1 && insCount <= INS_COUNT) {
 				size_t temp = getCycles();
 				cycle();
 				handleIO(machine);
@@ -169,17 +173,17 @@ void mainloop(sf::RenderWindow *window, SI *machine) {
 			time = sf::Time::Zero;
 		}
 	}
+	window->close();
 }
 
 int main(int argc, char **argv) {
 	SI machine;
 	if(argc != 2) {
-		printf("Usage: %s [ROM]", argv[0]);
+		printf("Usage: %s [ROM] ", argv[0]);
 		return 1;
 	}
 	uint8_t *data;
 	size_t size = readFile(argv[1], &data);
-	printf("%u\n", size);
 	for(size_t i=0;i<size;i++) {
 		machine.memory[i] = data[i];
 	}
@@ -187,7 +191,7 @@ int main(int argc, char **argv) {
 	machine.shift_reg = 0;
 	machine.shift_offset = 0;
 	machine.devs[0].in = 0;
-	machine.devs[1].in = 8;
+	machine.devs[1].in = 0;
 	machine.devs[2].in = 0;
 	machine.devs[3].in = 0;
 	machine.devs[4].in = 0;
@@ -208,7 +212,7 @@ int main(int argc, char **argv) {
 
 	free(data);
 	initCpu(machine.memory, machine.devs);
-	sf::RenderWindow window(sf::VideoMode(224, 256), "Space Invaders");
+	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Space Invaders");
 	mainloop(&window, &machine);
 	return 0;
 }

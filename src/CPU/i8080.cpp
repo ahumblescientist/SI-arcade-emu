@@ -38,10 +38,22 @@ void resetCycles() {
 }
 
 uint8_t read(uint16_t addr) {
+	if(addr >= 0x6000) {
+		return 0;
+	}
+	if(addr >= 0x4000 && addr < 0x6000) {
+		addr -= 0x2000;
+	}
 	return cpu.memory[addr];
 }
 
 void write(uint16_t addr, uint8_t b) {
+	if(addr < 0x2000) {
+		return;
+	}
+	if(addr >= 0x4000) {
+		return;
+	}
 	cpu.memory[addr] = b;
 }
 void setBC(uint16_t d) {
@@ -138,7 +150,7 @@ void DCR(uint8_t *R) {
 	setFlag(Z, *R == 0);
 	setFlag(S, (*R & 128));
 	setFlag(P, parity(*R));
-	setFlag(A, (*R & 0x0F) != 0x0F);
+	setFlag(A, !((*R & 0x0F) == 0x0F));
 	cadd(5);
 
 
@@ -989,7 +1001,7 @@ void execute(uint8_t i) {
 		
 		// 0xE0 - 0xEF
 		case 0xE0: RPO(); break;
-		case 0xE1: { temp = getHL();POP(&temp); setHL(temp); break;}
+		case 0xE1: { temp = getHL(); POP(&temp); setHL(temp); break;}
 		case 0xE2: JPO(); break;
 		case 0xE3: XTHL(); break;
 		case 0xE4: CPO(); break;
@@ -1027,8 +1039,6 @@ void execute(uint8_t i) {
 }
 
 void cycle() {
-	// TODO
-
 	if(cpu.INTE && cpu.I) {
 		cpu.hlt = 0;
 		cpu.INTE = 0;
