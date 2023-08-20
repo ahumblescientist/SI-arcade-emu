@@ -14,7 +14,7 @@
 ## compiling and running
 * you need to have [SFML](https://www.sfml-dev.org/) installed in order to compile the code
 * to compile the code simply run `make` in the project directory, that will spit out a binary file in the `bin/` directoy
-* i used clang++ as my C++ compiler, if you want to use g++ or any other compiler just run `make CC=[your preffered compiler]` insteed 
+* i used clang++ as my C++ compiler, if you want to use g++ or any other compiler just run `make CC=[your preffered compiler]` instead 
 
 
 ## Controls 
