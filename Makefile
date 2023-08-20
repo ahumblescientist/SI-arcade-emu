@@ -3,7 +3,7 @@ HFILES = Makefile src/SI.hpp src/CPU/i8080.hpp
 FILES = $(CFILES) $(HFILES)
 CC = clang++
 OUT = bin/main
-FLAGS = -lsfml-window -lsfml-system -lsfml-graphics -ggdb3 -O0 -o $(OUT)
+FLAGS = -lsfml-window -lsfml-system -lsfml-graphics -O3 -o $(OUT)
 
 
 main: $(FILES)
