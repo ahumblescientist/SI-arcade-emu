@@ -11,7 +11,7 @@
 #define WINDOW_WIDTH 700
 #define WINDOW_HEIGHT 800
 
-size_t readFile(char *filename, uint8_t **data) {
+void readFile(char *filename, uint8_t *data) {
 	FILE *fp = fopen(filename, "r");
 	if(fp == NULL) {
 		printf("Failed to open file (%s)\n", filename);
@@ -20,12 +20,10 @@ size_t readFile(char *filename, uint8_t **data) {
 	fseek(fp, 0L, SEEK_END);
 	size_t filesize = ftell(fp);
 	fseek(fp, 0L, SEEK_SET);
-	*data = (uint8_t *)malloc(filesize);
 	if(data == NULL) {
 		printf("Failed to allocate memory\n");
 	}
-	fread(*data, filesize, 1, fp);
-	return filesize;
+	fread(data, filesize, 1, fp);
 }
 
 void handlePress(sf::RenderWindow *window, SI *machine, sf::Event keycode) {
@@ -182,11 +180,7 @@ int main(int argc, char **argv) {
 		printf("Usage: %s [ROM] ", argv[0]);
 		return 1;
 	}
-	uint8_t *data;
-	size_t size = readFile(argv[1], &data);
-	for(size_t i=0;i<size;i++) {
-		machine.memory[i] = data[i];
-	}
+	readFile(argv[1], machine.memory);
 	machine.current_interrupt = 0xCF;
 	machine.shift_reg = 0;
 	machine.shift_offset = 0;
@@ -210,7 +204,6 @@ int main(int argc, char **argv) {
 	machine.devs[4].outRead = 0;
 	machine.devs[5].outRead = 0;
 
-	free(data);
 	initCpu(machine.memory, machine.devs);
 	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Space Invaders");
 	mainloop(&window, &machine);
